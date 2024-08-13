@@ -1,8 +1,7 @@
 name: flutter_local_notifications
-repository: https://github.com/MaikuB/flutter_local_notifications
+repository: https://github.com/nextandot/flutter_local_notifications
 packages:
   - flutter_local_notifications
-  - flutter_local_notifications_linux
   - flutter_local_notifications_platform_interface
   - flutter_local_notifications/example/
 
@@ -61,15 +60,6 @@ scripts:
     packageFilters:
       dirExists:
         - macos
-      scope: "*example*"
-  build:example_linux:
-    run: |
-      melos exec -c 1 -- \
-        "flutter build linux"
-    description: Build a specific example app for Linux.
-    packageFilters:
-      dirExists:
-        - linux
       scope: "*example*"
 
   clean:

@@ -20,7 +20,6 @@ A cross platform plugin for displaying local notifications.
    - [Updating application badge](#updating-application-badge)
    - [Custom notification sounds](#custom-notification-sounds)
    - [macOS differences](#macos-differences)
-   - [Linux limitations](#linux-limitations)
    - [Notification payload](#notification-payload)
 - **[📷 Screenshots](#-screenshots)**
 - **[👏 Acknowledgements](#-acknowledgements)**
@@ -58,7 +57,6 @@ A cross platform plugin for displaying local notifications.
 * **Android+**. Uses the [NotificationCompat APIs](https://developer.android.com/reference/androidx/core/app/NotificationCompat) so it can be run older Android devices
 * **iOS**. Uses the [UserNotification APIs](https://developer.apple.com/documentation/usernotifications) (aka the User Notifications Framework)
 * **macOS**. On macOS versions older than 10.14, the plugin will use the [NSUserNotification APIs](https://developer.apple.com/documentation/foundation/nsusernotification). The [UserNotification APIs](https://developer.apple.com/documentation/usernotifications) (aka the User Notifications Framework) is used on macOS 10.14 or newer. Notification actions only work on macOS 10.14 or newer
-* **Linux**. Uses the [Desktop Notifications Specification](https://specifications.freedesktop.org/notification-spec/)
 
 Note: the plugin has a requires Flutter SDK 3.13 at a minimum. The list of support platforms for Flutter 3.1.3 itself can be found [here](https://github.com/flutter/website/blob/3d18ab48218101493af84953b71eac0cc6781fdd/src/reference/supported-platforms.md)
 
@@ -101,14 +99,6 @@ Note: the plugin has a requires Flutter SDK 3.13 at a minimum. The list of suppo
 * [iOS (all supported versions) & macOS 10.14+] Request notification permissions and customise the permissions being requested around displaying notifications
 * [iOS 10 or newer and macOS 10.14 or newer] Display notifications with attachments
 * [iOS and macOS 10.14 or newer] Ability to check if notifications are enabled with specific type check
-* [Linux] Ability to to use themed/Flutter Assets icons and sound
-* [Linux] Ability to to set the category
-* [Linux] Configuring the urgency
-* [Linux] Configuring the timeout (depends on system implementation)
-* [Linux] Ability to set custom notification location (depends on system implementation)
-* [Linux] Ability to set custom hints
-* [Linux] Ability to suppress sound
-* [Linux] Resident and transient notifications
 
 ## ⚠ Caveats and limitations
 
@@ -146,14 +136,6 @@ Due to limitations currently within the macOS Flutter engine, `getNotificationAp
 
 The `schedule`, `showDailyAtTime` and `showWeeklyAtDayAndTime` methods that were implemented before macOS support was added and have been marked as deprecated aren't implemented on macOS.
 
-### Linux limitations
-
-Capabilities depend on the system notification server implementation, therefore, not all features listed in `LinuxNotificationDetails` may be supported. One of the ways to check some capabilities is to call the `LinuxFlutterLocalNotificationsPlugin.getCapabilities()` method.
-
-Scheduled/pending notifications is currently not supported due to the lack of a scheduler API.
-
-The `onDidReceiveNotificationResponse` callback runs on the main isolate of the running application and cannot be launched in the background if the application is not running. To respond to notification after the application is terminated, your application should be registered as DBus activatable (please see [DBusApplicationLaunching](https://wiki.gnome.org/HowDoI/DBusApplicationLaunching) for more information), and register action before activating the application. This is difficult to do in a plugin because plugins instantiate during application activation, so `getNotificationAppLaunchDetails` can't be implemented without changing the main user application.
-
 ### Notification payload
 
 Due to some limitations on iOS with how it treats null values in dictionaries, a null notification payload is coalesced to an empty string behind the scenes on all platforms for consistency.
@@ -165,7 +147,6 @@ Due to some limitations on iOS with how it treats null values in dictionaries, a
 | Android | <img height="480" src="https://github.com/MaikuB/flutter_local_notifications/raw/master/images/android_notification.png"> |
 | iOS | <img height="414" src="https://github.com/MaikuB/flutter_local_notifications/raw/master/images/ios_notification.png"> |
 | macOS | <img src="https://github.com/MaikuB/flutter_local_notifications/raw/master/images/macos_notification.png"> |
-| Linux | <img src="https://github.com/MaikuB/flutter_local_notifications/raw/master/images/gnome_linux_notification.png"> <img src="https://github.com/MaikuB/flutter_local_notifications/raw/master/images/kde_linux_notification.png"> |
 
 
 ## 👏 Acknowledgements
@@ -350,13 +331,9 @@ const AndroidInitializationSettings initializationSettingsAndroid =
 final DarwinInitializationSettings initializationSettingsDarwin =
     DarwinInitializationSettings(
         onDidReceiveLocalNotification: onDidReceiveLocalNotification);
-final LinuxInitializationSettings initializationSettingsLinux =
-    LinuxInitializationSettings(
-        defaultActionName: 'Open notification');
 final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
-    iOS: initializationSettingsDarwin,
-    linux: initializationSettingsLinux);
+    iOS: initializationSettingsDarwin);
 flutterLocalNotificationsPlugin.initialize(initializationSettings,
     onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
 
@@ -397,14 +374,14 @@ If you encounter any issues please refer to the API docs and the sample code in 
 
 ### Notification Actions
 
-Notifications can now contain actions but note that on Apple's platforms, these work only on iOS 10 or newer and macOS 10.14 or newer.  On macOS and Linux (see [Linux limitations](#linux-limitations) chapter), these will only run on the main isolate by calling the `onDidReceiveNotificationResponse` callback. On iOS and Android, these will run on the main isolate by calling the `onDidReceiveNotificationResponse` callback if the configuration has specified that the app/user interface should be shown i.e. by specifying the `DarwinNotificationActionOption.foreground` option on iOS and the `showsUserInterface` property on Android. If they haven't, then these actions may be selected by the user when an app is sleeping or terminated and will wake up your app. However, it may not wake up the user-visible part of your App; but only the part of it which runs in the background. This is done by spawning a background isolate.
+Notifications can now contain actions but note that on Apple's platforms, these work only on iOS 10 or newer and macOS 10.14 or newer.  On macOS, these will only run on the main isolate by calling the `onDidReceiveNotificationResponse` callback. On iOS and Android, these will run on the main isolate by calling the `onDidReceiveNotificationResponse` callback if the configuration has specified that the app/user interface should be shown i.e. by specifying the `DarwinNotificationActionOption.foreground` option on iOS and the `showsUserInterface` property on Android. If they haven't, then these actions may be selected by the user when an app is sleeping or terminated and will wake up your app. However, it may not wake up the user-visible part of your App; but only the part of it which runs in the background. This is done by spawning a background isolate.
 
 This plugin contains handlers for iOS & Android to handle these background isolate cases and will allow you to specify a Dart entry point (a function).
 When the user selects a action, the plugin will start a **separate Flutter Engine** which will then invoke the `onDidReceiveBackgroundNotificationResponse` callback
 
 **Configuration**:
 
-*Android* and *Linux* do not require any configuration.
+*Android* do not require any configuration.
 
 *iOS* will require a few steps:
 
@@ -488,7 +465,7 @@ final DarwinInitializationSettings initializationSettingsDarwin = DarwinInitiali
 ],
 ```
 
-On iOS/macOS, the notification category will define which actions are availble. On Android and Linux, you can put the actions directly in the `AndroidNotificationDetails` and `LinuxNotificationDetails` classes.
+On iOS/macOS, the notification category will define which actions are availble. On Android, you can put the actions directly in the `AndroidNotificationDetails` classes.
 
 **Usage**:
 
@@ -513,7 +490,7 @@ await flutterLocalNotificationsPlugin.initialize(
 );
 ```
 
-Remember this function runs (except Linux) in a separate isolate! This function also requires the `@pragma('vm:entry-point')` annotation to ensure that tree-shaking doesn't remove the code since it would be invoked on the native side. See [here](https://github.com/dart-lang/sdk/blob/master/runtime/docs/compiler/aot/entry_point_pragma.md) for official documentation on the annotation.
+Remember this function runs in a separate isolate! This function also requires the `@pragma('vm:entry-point')` annotation to ensure that tree-shaking doesn't remove the code since it would be invoked on the native side. See [here](https://github.com/dart-lang/sdk/blob/master/runtime/docs/compiler/aot/entry_point_pragma.md) for official documentation on the annotation.
 
 Developers should also note that whilst accessing plugins will work, on Android there is **no** access to the `Activity` context. This means some plugins (like `url_launcher`) will require additional flags to start the main `Activity` again.
 
@@ -523,7 +500,7 @@ The notification actions are platform specific and you have to specify them diff
 
 On iOS/macOS, the actions are defined on a category, please see the configuration section for details.
 
-On Android and Linux, the actions are configured directly on the notification.
+On Android, the actions are configured directly on the notification.
 
 ``` dart
 Future<void> _showNotificationWithActions() async {
@@ -568,14 +545,10 @@ const AndroidInitializationSettings initializationSettingsAndroid =
 final DarwinInitializationSettings initializationSettingsDarwin =
     DarwinInitializationSettings(
         onDidReceiveLocalNotification: onDidReceiveLocalNotification);
-final LinuxInitializationSettings initializationSettingsLinux =
-    LinuxInitializationSettings(
-        defaultActionName: 'Open notification');
 final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsDarwin,
-    macOS: initializationSettingsDarwin,
-    linux: initializationSettingsLinux);
+    macOS: initializationSettingsDarwin);
 await flutterLocalNotificationsPlugin.initialize(initializationSettings,
     onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
 ```
@@ -600,8 +573,6 @@ void onDidReceiveNotificationResponse(NotificationResponse notificationResponse)
 In the real world, this payload could represent the id of the item you want to display the details of. Once the initialisation is complete, then you can manage the displaying of notifications. Note that this callback is only intended to work when the app is running. For scenarios where your application needs to handle when a notification launched the app refer to [here](#getting-details-on-if-the-app-was-launched-via-a-notification-created-by-this-plugin)
 
 The `DarwinInitializationSettings` class provides default settings on how the notification be presented when it is triggered and the application is in the foreground on iOS/macOS. There are optional named parameters that can be modified to suit your application's purposes. Here, it is omitted and the default values for these named properties is set such that all presentation options (alert, sound, badge) are enabled. 
-
-The `LinuxInitializationSettings` class requires a name for the default action that calls the `onDidReceiveNotificationResponse` callback when the notification is clicked. 
 
 On iOS and macOS, initialisation may show a prompt to requires users to give the application permission to display notifications (note: permissions don't need to be requested on Android). Depending on when this happens, this may not be the ideal user experience for your application. If so, please refer to the next section on how to work around this.
 
@@ -628,14 +599,10 @@ The constructor for the `DarwinInitializationSettings` class  has three named pa
           requestAlertPermission: false,
           requestBadgePermission: false,
           requestSoundPermission: false);
-  final LinuxInitializationSettings initializationSettingsLinux =
-    LinuxInitializationSettings(
-        defaultActionName: 'Open notification');
   final InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsDarwin,
-      macOS: initializationSettingsDarwin,
-      linux: initializationSettingsLinux);
+      macOS: initializationSettingsDarwin);
   await flutterLocalNotificationsPlugin.initialize(initializationSettings,
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
 ```
